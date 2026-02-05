@@ -24,7 +24,8 @@ services:
 
   company-service:
     build: ./company-service
-    # Not exposed on host; only gateway talks to it (use 8040:8040 for direct access during dev)
+    ports:
+      - "8040:8040"   # direct access for Swagger UI at /docs
     environment:
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/company_db
       - INTERNAL_API_KEY=${INTERNAL_API_KEY:-dev-internal-key}
