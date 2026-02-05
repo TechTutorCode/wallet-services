@@ -1,0 +1,57 @@
+# Company Service - local development / integration
+# Usage: docker-compose up -d
+#        Ensure .env has DATABASE_URL, INTERNAL_API_KEY, etc.
+
+services:
+  company-service:
+    build: .
+    ports:
+      - "8040:8040"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/company_db
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-dev-internal-key}
+      - MPESA_BASE_URL=${MPESA_BASE_URL:-https://m-pesa.techtutor.co.ke}
+      - COMPANY_CALLBACK_URL=${COMPANY_CALLBACK_URL:-https://api.myapp.com/mpesa/callback}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - SERVICE_NAME=company-service
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8040/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: company_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d company_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
