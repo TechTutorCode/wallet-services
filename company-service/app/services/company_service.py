@@ -30,10 +30,10 @@ class CompanyService:
         self.session = session
         self.mpesa = mpesa_client or MpesaClient()
 
-    def _publish(self, event_type: str, payload: dict) -> None:
+    async def _publish(self, event_type: str, payload: dict) -> None:
         """Publish event in thread so we don't block async loop."""
         pub = get_event_publisher()
-        asyncio.to_thread(pub.publish, event_type, payload)
+        await asyncio.to_thread(pub.publish, event_type, payload)
 
     async def create(self, data: CompanyCreate) -> CompanyCreateResponse:
         """
@@ -54,7 +54,7 @@ class CompanyService:
         await self.session.flush()
         await self.session.refresh(company)
 
-        self._publish("company.created", {
+        await self._publish("company.created", {
             "company_id": str(company.id),
             "name": company.name,
             "account_number": company.account_number,
@@ -88,7 +88,7 @@ class CompanyService:
         await self.session.flush()
         await self.session.refresh(company)
 
-        self._publish("company.updated", {
+        await self._publish("company.updated", {
             "company_id": str(company.id),
             "name": company.name,
             "account_number": company.account_number,
@@ -134,7 +134,7 @@ class CompanyService:
         await self.session.flush()
         await self.session.refresh(company)
 
-        self._publish("company.deleted", {
+        await self._publish("company.deleted", {
             "company_id": str(company.id),
             "name": company.name,
             "deleted_at": now.isoformat(),

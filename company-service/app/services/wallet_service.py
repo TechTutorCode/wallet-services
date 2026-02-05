@@ -24,10 +24,10 @@ class WalletService:
         self.session = session
         self.mpesa = mpesa_client or MpesaClient()
 
-    def _publish(self, event_type: str, payload: dict) -> None:
+    async def _publish(self, event_type: str, payload: dict) -> None:
         """Publish event in thread so we don't block async loop."""
         pub = get_event_publisher()
-        asyncio.to_thread(pub.publish, event_type, payload)
+        await asyncio.to_thread(pub.publish, event_type, payload)
 
     async def create(self, company_id: UUID, data: WalletCreate) -> WalletCreateResponse | None:
         """
@@ -67,7 +67,7 @@ class WalletService:
         await self.session.flush()
         await self.session.refresh(wallet)
 
-        self._publish("wallet.created", {
+        await self._publish("wallet.created", {
             "wallet_id": str(wallet.id),
             "company_id": str(company_id),
             "credential_id": wallet.credential_id,
