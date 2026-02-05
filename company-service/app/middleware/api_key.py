@@ -17,9 +17,9 @@ class InternalAPIKeyMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        # Skip validation for docs (optional; remove if docs should be protected)
+        # Skip validation for health and docs (so orchestrators can healthcheck without the key)
         path = request.url.path
-        if path in ("/docs", "/redoc", "/openapi.json"):
+        if path in ("/health", "/docs", "/redoc", "/openapi.json"):
             return await call_next(request)
 
         api_key = request.headers.get(HEADER_INTERNAL_API_KEY)
