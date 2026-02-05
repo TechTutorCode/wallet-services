@@ -16,7 +16,15 @@ INTERNAL_API_KEY_HEADER = APIKeyHeader(name="X-Internal-API-Key", auto_error=Fal
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ensure exchange exists. Shutdown: close RabbitMQ."""
+    """Startup: connect to RabbitMQ and declare exchange so it appears in the UI and publish works."""
+    import asyncio
+    try:
+        await asyncio.to_thread(get_event_publisher().declare_exchange)
+    except Exception as e:
+        import logging
+        logging.getLogger("app.events.publisher").warning(
+            "RabbitMQ exchange declaration failed at startup: %s. Events will not be published.", e
+        )
     yield
     get_event_publisher().close()
 

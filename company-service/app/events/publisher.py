@@ -57,38 +57,50 @@ class EventPublisher:
 
     def _ensure_connection(self) -> BlockingChannel:
         if self._channel is None or self._channel.is_closed:
-            self._connection = pika.BlockingConnection(
-                pika.URLParameters(self._url),
-            )
-            self._channel = self._connection.channel()
-            self._channel.exchange_declare(
-                exchange=self._exchange,
-                exchange_type="topic",
-                durable=True,
-            )
+            try:
+                self._connection = pika.BlockingConnection(
+                    pika.URLParameters(self._url),
+                )
+                self._channel = self._connection.channel()
+                self._channel.exchange_declare(
+                    exchange=self._exchange,
+                    exchange_type="topic",
+                    durable=True,
+                )
+                logger.info("Connected to RabbitMQ, exchange %s declared", self._exchange)
+            except Exception as e:
+                logger.exception("RabbitMQ connection failed: %s", e)
+                raise
         return self._channel
+
+    def declare_exchange(self) -> None:
+        """Declare the exchange (and connect). Call at startup so the exchange exists and connectivity is verified."""
+        self._ensure_connection()
 
     def publish(self, event_type: str, payload: dict[str, Any]) -> None:
         if event_type not in EVENT_KEYS:
             logger.warning("Unknown event_type %s, publishing anyway", event_type)
-        channel = self._ensure_connection()
-        body = {
-            "event_id": str(uuid4()),
-            "event_type": event_type,
-            "occurred_at": datetime.now(timezone.utc).isoformat(),
-            "payload": payload,
-        }
-        body_str = _serialize_payload(body)
-        channel.basic_publish(
-            exchange=self._exchange,
-            routing_key=event_type,
-            body=body_str,
-            properties=pika.BasicProperties(
-                delivery_mode=2,
-                content_type="application/json",
-            ),
-        )
-        logger.info("Published event %s", event_type)
+        try:
+            channel = self._ensure_connection()
+            body = {
+                "event_id": str(uuid4()),
+                "event_type": event_type,
+                "occurred_at": datetime.now(timezone.utc).isoformat(),
+                "payload": payload,
+            }
+            body_str = _serialize_payload(body)
+            channel.basic_publish(
+                exchange=self._exchange,
+                routing_key=event_type,
+                body=body_str,
+                properties=pika.BasicProperties(
+                    delivery_mode=2,
+                    content_type="application/json",
+                ),
+            )
+            logger.info("Published event %s", event_type)
+        except Exception as e:
+            logger.exception("Failed to publish event %s: %s", event_type, e)
 
     def close(self) -> None:
         try:
