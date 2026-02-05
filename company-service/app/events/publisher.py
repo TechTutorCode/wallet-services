@@ -58,9 +58,11 @@ class EventPublisher:
     def _ensure_connection(self) -> BlockingChannel:
         if self._channel is None or self._channel.is_closed:
             try:
-                self._connection = pika.BlockingConnection(
-                    pika.URLParameters(self._url),
-                )
+                params = pika.URLParameters(self._url)
+                # Keep connection from being closed by server when idle (heartbeat every 10 min)
+                params.heartbeat = 600
+                params.blocked_connection_timeout = 30
+                self._connection = pika.BlockingConnection(params)
                 self._channel = self._connection.channel()
                 self._channel.exchange_declare(
                     exchange=self._exchange,
