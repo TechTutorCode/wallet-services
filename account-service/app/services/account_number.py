@@ -5,7 +5,6 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import with_for_update
 
 from app.config import get_settings
 from app.models.wallet_registry import WalletRegistry
