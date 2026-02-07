@@ -67,7 +67,7 @@ class WalletService:
         await self.session.flush()
         await self.session.refresh(wallet)
 
-        await         await self._publish("wallet.created", {
+        await self._publish("wallet.created", {
             "wallet_id": str(wallet.id),
             "company_id": str(company_id),
             "company_account_number": company.account_number,
