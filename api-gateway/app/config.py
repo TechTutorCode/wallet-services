@@ -34,10 +34,13 @@ class Settings(BaseSettings):
         alias="INTERNAL_API_KEY",
     )
 
-    # Backend service URLs (used when running in Docker / same network)
     company_service_url: str = Field(
         default="http://company-service:8040",
         alias="COMPANY_SERVICE_URL",
+    )
+    account_service_url: str = Field(
+        default="http://account-service:8050",
+        alias="ACCOUNT_SERVICE_URL",
     )
 
     # Timeout for proxy requests

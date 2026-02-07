@@ -40,8 +40,12 @@ def create_app() -> FastAPI:
         path = path.strip("/")
         if path.startswith("companies") or path == "companies":
             return settings.company_service_url.rstrip("/")
-        # Add more services later, e.g.:
-        # if path.startswith("wallets"): return settings.wallet_service_url.rstrip("/")
+        if path.startswith("accounts") or path == "accounts":
+            return settings.account_service_url.rstrip("/")
+        if path.startswith("wallets") or path == "wallets":
+            return settings.account_service_url.rstrip("/")
+        if path.startswith("callbacks") or path == "callbacks":
+            return settings.account_service_url.rstrip("/")
         return None
 
     @app.get("/health")
